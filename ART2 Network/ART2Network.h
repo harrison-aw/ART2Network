@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 /*
  * ART2Network.h
  *
@@ -49,3 +50,22 @@ private:
 };
 
 #endif /* ART2NETWORK_H_ */
+=======
+/*
+ * ART2Network.h
+ *
+ *  Created on: Apr 29, 2013
+ *      Author: ah1411
+ */
+
+#ifndef ART2NETWORK_H_
+#define ART2NETWORK_H_
+
+class ART2Network {
+public:
+	ART2Network();
+	virtual ~ART2Network();
+};
+
+#endif /* ART2NETWORK_H_ */
+>>>>>>> Began ART2 network!

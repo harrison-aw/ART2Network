@@ -152,7 +152,4 @@ void Maxnet<input_type, weight_type>::init_W(weight_type epsilon, weight_type th
 	}
 }
 
-
-
-
 #endif /* MAXNET_H_ */
