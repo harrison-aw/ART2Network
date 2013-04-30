@@ -10,37 +10,42 @@
 
 #include <cstddef>
 
-template<class input_type, class weight_type>
+template<class input, class weight>
 class Maxnet {
 public:
-	typedef input_type *input;
 	typedef size_t node_index;
 
-	typedef weight_type **weight_matrix;
-	typedef weight_type *weight_matrix_row;
+	typedef input *input_vector;
+
+	typedef weight *weight_vector;
+	typedef weight_vector *weight_matrix;
 
 	Maxnet(size_t node_count);
-	Maxnet(size_t node_count, weight_type epsilon, weight_type theta);
-	Maxnet(const Maxnet<input_type, weight_type> &maxnet);
+	Maxnet(size_t node_count, weight epsilon, weight theta);
+	Maxnet(const Maxnet<input, weight> &maxnet);
 	virtual ~Maxnet();
 
-	void iterate(input x) const;     // steps through a single iteration
-	void operator()(input x) const;  // iterates until winner chosen
+	void iterate(input_vector x) const;     // steps through a single iteration
+	void operator()(input_vector x) const;  // iterates until winner chosen
+
+	size_t getNodeCount() const { return node_count; }
 
 protected:
-	weight_type net(node_index j, input const x) const;
-	input_type f(weight_type x) const;  // node activation function
-	weight_type w(node_index j, node_index i) const;
+	weight net(node_index j, input_vector const x) const;
+	input f(weight x) const;  // node activation function
+	weight w(node_index j, node_index i) const;
 
 	size_t get_node_count() const { return node_count; };
+	void set_node_count(size_t node_count) { this->node_count = node_count; }
 	weight_matrix const get_W() const { return W;}
-	void set_W(node_index j, node_index i, weight_type wji) { W[j][i] = wji; };
+	void set_W(weight_matrix W) { this->W = W; }
+	void set_W(node_index j, node_index i, weight wji) { W[j][i] = wji; };
 
 private:
-	Maxnet(): node_count(0), W(NULL) {};
-	Maxnet<input_type, weight_type> operator=(const Maxnet<input_type, weight_type> &maxnet) { return *this; };
+	Maxnet() {};
+	Maxnet<input, weight> operator=(const Maxnet<input, weight> &maxnet) {};
 
-	void init_W(weight_type epsilon, weight_type theta);
+	void init_W(weight epsilon, weight theta);
 
 	size_t node_count;
 	weight_matrix W;  // connection weights
@@ -50,26 +55,26 @@ private:
 
 /* Implementation */
 
-template<class input_type, class weight_type>
-Maxnet<input_type, weight_type>::Maxnet(size_t node_count):
+template<class input, class weight>
+Maxnet<input, weight>::Maxnet(size_t node_count):
 	node_count(node_count) {
 	init_W(1.0/node_count, 1.0);
 }
 
-template<class input_type, class weight_type>
-Maxnet<input_type, weight_type>::Maxnet(size_t node_count, weight_type epsilon, weight_type theta):
+template<class input, class weight>
+Maxnet<input, weight>::Maxnet(size_t node_count, weight epsilon, weight theta):
 	node_count(node_count) {
 	init_W(epsilon, theta);
 }
 
-template<class input_type, class weight_type>
-Maxnet<input_type, weight_type>::Maxnet(const Maxnet<input_type, weight_type> &maxnet) {
+template<class input, class weight>
+Maxnet<input, weight>::Maxnet(const Maxnet<input, weight> &maxnet) {
 	node_count = maxnet.node_count;
 
-	W = new weight_matrix_row[node_count];
+	W = new weight_vector[node_count];
 
 	for (node_index j = 0; j < node_count; ++j) {
-		W[j] = new weight_type[node_count];
+		W[j] = new weight[node_count];
 
 		for (node_index i = 0; i < node_count; ++i) {
 			W[j][i] = maxnet.W[j][i];
@@ -77,8 +82,8 @@ Maxnet<input_type, weight_type>::Maxnet(const Maxnet<input_type, weight_type> &m
 	}
 }
 
-template<class input_type, class weight_type>
-Maxnet<input_type, weight_type>::~Maxnet() {
+template<class input, class weight>
+Maxnet<input, weight>::~Maxnet() {
 	for (node_index j = 0; j < node_count; ++j) {
 		delete W[j];
 	}
@@ -86,8 +91,8 @@ Maxnet<input_type, weight_type>::~Maxnet() {
 	delete W;
 }
 
-template<class input_type, class weight_type>
-void Maxnet<input_type, weight_type>::iterate(input x) const {
+template<class input, class weight>
+void Maxnet<input, weight>::iterate(input_vector x) const {
 
 	double temp[node_count];
 
@@ -100,8 +105,8 @@ void Maxnet<input_type, weight_type>::iterate(input x) const {
 	}
 }
 
-template<class input_type, class weight_type>
-void Maxnet<input_type, weight_type>::operator()(input x) const {
+template<class input, class weight>
+void Maxnet<input, weight>::operator()(input_vector x) const {
 	unsigned non_zero_count;
 
 	do {
@@ -114,8 +119,8 @@ void Maxnet<input_type, weight_type>::operator()(input x) const {
 	} while (non_zero_count > 1);
 }
 
-template<class input_type, class weight_type>
-weight_type Maxnet<input_type, weight_type>::net(node_index j, input const x) const {
+template<class input, class weight>
+weight Maxnet<input, weight>::net(node_index j, input_vector const x) const {
 	double net = 0.0;
 
 	for (node_index i = 0; i < node_count; ++i) {
@@ -125,25 +130,25 @@ weight_type Maxnet<input_type, weight_type>::net(node_index j, input const x) co
 	return net;
 }
 
-template<class input_type, class weight_type>
-input_type Maxnet<input_type, weight_type>::f(weight_type net) const {
+template<class input, class weight>
+input Maxnet<input, weight>::f(weight net) const {
 	if (net > 0.0) {
 		return net;
 	}
 	return 0.0;
 }
 
-template<class input_type, class weight_type>
-weight_type Maxnet<input_type, weight_type>::w(node_index j, node_index i) const {
+template<class input, class weight>
+weight Maxnet<input, weight>::w(node_index j, node_index i) const {
 	return W[j][i];
 }
 
-template<class input_type, class weight_type>
-void Maxnet<input_type, weight_type>::init_W(weight_type epsilon, weight_type theta) {
-	W = new weight_matrix_row[node_count];
+template<class input, class weight>
+void Maxnet<input, weight>::init_W(weight epsilon, weight theta) {
+	W = new weight_vector[node_count];
 
 	for (node_index j = 0; j < node_count; ++j) {
-		W[j] = new weight_type[node_count];
+		W[j] = new weight[node_count];
 
 		for (node_index i = 0; i < node_count; ++i) {
 			if (j != i) W[j][i] = -epsilon;
