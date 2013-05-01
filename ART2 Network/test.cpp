@@ -10,8 +10,6 @@
 #include "Maxnet.h"
 #include "ART2Network.h"
 
-#define STATE cout << "p: "; printArray<double>(test.F1.p, 5); cout << "q: "; printArray<double>(test.F1.q, 5); cout << "u: "; printArray<double>(test.F1.u, 5); cout << "v: ";	printArray<double>(test.F1.v, 5); cout << "w: "; printArray<double>(test.F1.w, 5); cout << "x: "; printArray<double>(test.F1.x, 5);
-
 using namespace std;
 
 
@@ -39,26 +37,6 @@ int main() {
 
 
 	ART2Network test(5, 1.0, 0.0, 0.0, 1.0, 0.000001, 0.5, 0.5);
-
-	test.F1(input);
-	test.F1(input);
-	test.F1(input);
-	test.F1(input);
-	STATE
-
-	test.F1(input);
-	STATE
-
-	test.F1(input);
-	STATE
-
-	test.F1(input);
-	STATE
-	test.F1(input);
-	STATE
-	test.F1(input);
-	STATE
-
 
 
 	return 0;

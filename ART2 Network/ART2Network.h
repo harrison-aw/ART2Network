@@ -13,6 +13,7 @@
 
 #include "Maxnet.h"
 
+
 class ART2Network {
 public:
 	typedef size_t index;
@@ -38,8 +39,10 @@ public:
 	// Network signal functions
 	static weight NONLINEAR_SIGNAL_FUNC(weight theta, weight x);
 	static weight LINEAR_SIGNAL_FUNC(weight theta, weight x);
+	static weight HEAVISIDE_STEP_FUNC(weight d, weight x);
 
-	static double norm(double *vector, dimension m);
+	static weight norm(const weight_vector vector, dimension m);
+	static weight dotProduct(const weight_vector a, const weight_vector b, dimension m);
 
 	class Layer1 {
 	public:
@@ -54,11 +57,17 @@ public:
 		void zeroInput();
 		const weight_vector output() const { return p; }
 
+		const weight_vector getP() const { return p; };
+		const weight_vector getQ() const { return q; };
+		const weight_vector getU() const { return u; };
+		const weight_vector getV() const { return v; };
+		const weight_vector getW() const { return w; };
+		const weight_vector getX() const { return x; };
+
 	private:
 		weight feedback(index i, weight_vector const y, dimension y_dimension);
 		void iterate(const input_vector I, const weight_vector y, dimension y_dimension);
 
-	public:
 		void initVectors();
 
 		const ART2Network *parent;
@@ -76,8 +85,22 @@ public:
 		Layer2();
 		Layer2(const ART2Network &parent);
 
+		const weight_vector gated_output() const;
+
 	private:
 		const ART2Network *parent;
+	};
+
+	class OrientingSubsystem {
+	public:
+		OrientingSubsystem(const ART2Network &parent);
+
+		const weight_vector operator()(const weight_vector u, const weight_vector p);
+
+	private:
+		const ART2Network *parent;
+
+		weight_vector r;
 	};
 
 	weight a;
@@ -88,10 +111,16 @@ public:
 	weight theta;
 	weight rho;
 
+protected:
+	weight_matrix weight_deltas();
+
+
 private:
 	dimension input_dimension;
 	weight_matrix W;
 	weight (*f)(weight, weight);
+	weight (*g)(weight, weight);
+
 public:
 	Layer1 F1;
 	Layer2 F2;
