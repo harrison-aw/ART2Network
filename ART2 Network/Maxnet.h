@@ -10,149 +10,149 @@
 
 #include <cstddef>
 
-template<class input_type, class weight_type>
+template<class input, class weight>
+input BASIC_MAXNET_SIGNAL_FUNC(weight x) {
+	if (x >= 0) {
+		return x;
+	}
+	return 0;
+}
+
+template<class input, class weight>
 class Maxnet {
 public:
-	typedef input_type *input;
-	typedef size_t node_index;
+	typedef size_t index;
 
-	typedef weight_type **weight_matrix;
-	typedef weight_type *weight_matrix_row;
+	typedef input *input_vector;
+
+	typedef weight *weight_vector;
+	typedef weight_vector *weight_matrix;
 
 	Maxnet(size_t node_count);
-	Maxnet(size_t node_count, weight_type epsilon, weight_type theta);
-	Maxnet(const Maxnet<input_type, weight_type> &maxnet);
+	Maxnet(size_t node_count, weight epsilon, weight theta);
+	Maxnet(size_t node_count, weight epsilon, weight theta, input (&f)(weight));
 	virtual ~Maxnet();
 
-	void iterate(input x) const;     // steps through a single iteration
-	void operator()(input x) const;  // iterates until winner chosen
+	void operator()(input_vector const x);  // iterates until winner chosen
+
+	input_vector const output() const { return signal; }
 
 protected:
-	weight_type net(node_index j, input const x) const;
-	input_type f(weight_type x) const;  // node activation function
-	weight_type w(node_index j, node_index i) const;
-
-	size_t get_node_count() const { return node_count; };
-	weight_matrix const get_W() const { return W;}
-	void set_W(node_index j, node_index i, weight_type wji) { W[j][i] = wji; };
-
-private:
-	Maxnet(): node_count(0), W(NULL) {};
-	Maxnet<input_type, weight_type> operator=(const Maxnet<input_type, weight_type> &maxnet) { return *this; };
-
-	void init_W(weight_type epsilon, weight_type theta);
+	weight net(index j) const;
+	void iterate();
 
 	size_t node_count;
+	input (&f)(weight);
 	weight_matrix W;  // connection weights
 
+private:
+	Maxnet() {};
+	Maxnet<input, weight> &operator=(const Maxnet<input, weight> &) {};
+	Maxnet(const Maxnet<input, weight> &maxnet) {};
+
+	void initSignal();
+	void initW(weight epsilon, weight theta);
+
+	void setSignal(input_vector const I);
+
+	input_vector signal;
 };
 
 
 /* Implementation */
 
-template<class input_type, class weight_type>
-Maxnet<input_type, weight_type>::Maxnet(size_t node_count):
-	node_count(node_count) {
-	init_W(1.0/node_count, 1.0);
+template<class input, class weight>
+Maxnet<input, weight>::Maxnet(size_t node_count):
+	node_count(node_count), f(BASIC_MAXNET_SIGNAL_FUNC<input, weight>) {
+	initSignal();
+	initW(1.0/node_count, 1.0);
 }
 
-template<class input_type, class weight_type>
-Maxnet<input_type, weight_type>::Maxnet(size_t node_count, weight_type epsilon, weight_type theta):
-	node_count(node_count) {
-	init_W(epsilon, theta);
+template<class input, class weight>
+Maxnet<input, weight>::Maxnet(size_t node_count, weight epsilon, weight theta):
+	node_count(node_count), f(BASIC_MAXNET_SIGNAL_FUNC<input, weight>) {
+	initSignal();
+	initW(epsilon, theta);
 }
 
-template<class input_type, class weight_type>
-Maxnet<input_type, weight_type>::Maxnet(const Maxnet<input_type, weight_type> &maxnet) {
-	node_count = maxnet.node_count;
+template<class input, class weight>
+Maxnet<input, weight>::~Maxnet() {
+	delete signal;
 
-	W = new weight_matrix_row[node_count];
-
-	for (node_index j = 0; j < node_count; ++j) {
-		W[j] = new weight_type[node_count];
-
-		for (node_index i = 0; i < node_count; ++i) {
-			W[j][i] = maxnet.W[j][i];
-		}
-	}
-}
-
-template<class input_type, class weight_type>
-Maxnet<input_type, weight_type>::~Maxnet() {
-	for (node_index j = 0; j < node_count; ++j) {
+	for (index j = 0; j < node_count; ++j) {
 		delete W[j];
 	}
-
 	delete W;
 }
 
-template<class input_type, class weight_type>
-void Maxnet<input_type, weight_type>::iterate(input x) const {
+template<class input, class weight>
+void Maxnet<input, weight>::operator()(input_vector const I) {
+	unsigned int non_zero_count;
 
-	double temp[node_count];
-
-	for (node_index j = 0; j < node_count; ++j) {
-		temp[j] = f(net(j, x));
-	}
-
-	for (node_index j = 0; j < node_count; ++j) {
-		x[j] = temp[j];
-	}
-}
-
-template<class input_type, class weight_type>
-void Maxnet<input_type, weight_type>::operator()(input x) const {
-	unsigned non_zero_count;
+	setSignal(I);
 
 	do {
-		iterate(x);
+		iterate();
 
 		non_zero_count = 0;
-		for (node_index j = 0; j < node_count; ++j) {
-			if (x[j] > 0) ++non_zero_count;
+		for (index j = 0; j < node_count; ++j) {
+			if (signal[j] > 0) ++non_zero_count;
 		}
 	} while (non_zero_count > 1);
 }
 
-template<class input_type, class weight_type>
-weight_type Maxnet<input_type, weight_type>::net(node_index j, input const x) const {
-	double net = 0.0;
+template<class input, class weight>
+weight Maxnet<input, weight>::net(index j) const {
+	weight net = 0;
 
-	for (node_index i = 0; i < node_count; ++i) {
-		net += w(j, i) * x[i];
+	for (index i = 0; i < node_count; ++i) {
+		net += W[j][i] * signal[i];
 	 }
 
 	return net;
 }
 
-template<class input_type, class weight_type>
-input_type Maxnet<input_type, weight_type>::f(weight_type net) const {
-	if (net > 0.0) {
-		return net;
+template<class input, class weight>
+void Maxnet<input, weight>::iterate() {
+	input temp[node_count];
+
+	for (index j = 0; j < node_count; ++j) {
+		temp[j] = f(net(j));
 	}
-	return 0.0;
+
+	for (index j = 0; j < node_count; ++j) {
+		signal[j] = temp[j];
+	}
 }
 
-template<class input_type, class weight_type>
-weight_type Maxnet<input_type, weight_type>::w(node_index j, node_index i) const {
-	return W[j][i];
+template<class input, class weight>
+void Maxnet<input, weight>::initSignal() {
+	signal = new input[node_count];
+
+	for (index i = 0; i < node_count; ++i) {
+		signal[0] = 0;
+	}
 }
 
-template<class input_type, class weight_type>
-void Maxnet<input_type, weight_type>::init_W(weight_type epsilon, weight_type theta) {
-	W = new weight_matrix_row[node_count];
+template<class input, class weight>
+void Maxnet<input, weight>::initW(weight epsilon, weight theta) {
+	W = new weight_vector[node_count];
 
-	for (node_index j = 0; j < node_count; ++j) {
-		W[j] = new weight_type[node_count];
+	for (index j = 0; j < node_count; ++j) {
+		W[j] = new weight[node_count];
 
-		for (node_index i = 0; i < node_count; ++i) {
+		for (index i = 0; i < node_count; ++i) {
 			if (j != i) W[j][i] = -epsilon;
 			else W[j][i] = theta;
 		}
 	}
 }
 
-
-
+template<class input, class weight>
+void Maxnet<input, weight>::setSignal(input_vector const I) {
+	for (index i = 0; i < node_count; ++i) {
+		signal[i] = I[i];
+	}
+}
 
 #endif /* MAXNET_H_ */

@@ -12,29 +12,41 @@
 
 class ART2Network {
 public:
-	typedef size_t node_index;
-	typedef double *input;
+	typedef size_t index;
+	typedef size_t dimension;
 
-	typedef double **weight_matrix;
-	typedef double *weight_matrix_row;
+	typedef double input;
+	typedef input *input_vector;
 
-	ART2Network(double a, double b, double c, double d, double e, double theta, double rho);
+	typedef double weight;
+	typedef weight *weight_vector;
+	typedef weight_vector *weight_matrix;
+
+	class Layer1 {
+	public:
+		Layer1(const ART2Network &parent);
+
+	private:
+		const ART2Network &parent;
+	};
+
+	class Layer2 {
+	public:
+		Layer2(const ART2Network &parent);
+	private:
+		weight_vector output;
+	};
+
+	ART2Network(dimension M, weight a, weight b, weight c, weight d, weight e, weight theta, weight rho);
 	virtual ~ART2Network();
 
 	void iterate(input x);
 
-protected:
-	double w(node_index i, input I, double ui);
-	double x(node_index i, double wi, double normw);
-	double v(node_index i, double xi, double qi);
-	double u(node_index i, double vi, double normv);
-	double p(node_index i, double ui, double neti);
-	double q(node_index i, double pi, double normp);
 
 private:
 	ART2Network() {};
-	ART2Network(const ART2Network&) {};
-	ART2Network operator=(const ART2Network&) {};
+	ART2Network(const ART2Network &art2network) {};
+	ART2Network &operator=(const ART2Network&) {};
 
 	double a;
 	double b;
@@ -44,7 +56,7 @@ private:
 	double theta;
 	double rho;
 
-	weight_matrix W;
+	weight_matrix z;
 
 };
 

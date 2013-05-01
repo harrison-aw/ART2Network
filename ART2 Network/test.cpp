@@ -27,7 +27,7 @@ int main() {
 
 	network(input);
 
-	printArray<double>(input, 5);
+	printArray<double>(network.output(), 5);
 
 	return 0;
 }
