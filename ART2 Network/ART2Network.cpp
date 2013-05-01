@@ -5,58 +5,179 @@
  *      Author: Tony
  */
 
+#include <cmath>
+#include <iostream>
+
 #include "ART2Network.h"
 
+using namespace std;
+
+/* Static */
+
+ART2Network::weight ART2Network::NONLINEAR_SIGNAL_FUNC(weight theta, weight x) {
+	if (theta >= x)
+		return 2*theta*x*x/(x*x+theta*theta);
+	return x;
+}
+
+ART2Network::weight ART2Network::LINEAR_SIGNAL_FUNC(weight theta, weight x) {
+	if (theta >= x)
+		return 0;
+	return x;
+}
+
+double ART2Network::norm(double *vector, dimension m) {
+	double sum = 0.0;
+	for (index i = 0; i < m; ++i) {
+		sum += vector[i] * vector[i];
+	}
+	return sqrt(sum);
+}
+
+/* Constructors */
+
+ART2Network::ART2Network():
+	a(0), b(0), c(0), d(0), e(0), theta(0), rho(1), input_dimension(0), W(NULL), f(&LINEAR_SIGNAL_FUNC) {
+}
+
 ART2Network::ART2Network(dimension input_dimension, weight a, weight b, weight c, weight d, weight e, weight theta, weight rho):
-	input_dimension(input_dimension), a(a), b(b), c(c), d(d), e(e), theta(theta), rho(rho), Z(NULL) {
+	a(a), b(b), c(c), d(d), e(e), theta(theta), rho(rho), input_dimension(input_dimension), W(NULL), f(LINEAR_SIGNAL_FUNC), F1(*this), F2(*this) {
 }
 
 ART2Network::~ART2Network() {
+	size_t N = F2.getNodeCount();
+	if (W != NULL) {
+		for (index j = 0; j < N; ++j) {
+			delete W[j];
+		}
+		delete W;
+	}
 }
 
+/* Operators */
 
-/* Layer 1 */
 
-ART2Network::Layer1::Layer1(const ART2Network &parent):
-	parent(parent) {
 
-	p = new weight[input_dimension];
-	q = new weight[input_dimension];
-	u = new weight[input_dimension];
-	v = new weight[input_dimension];
-	w = new weight[input_dimension];
-	x = new weight[input_dimension];
+/** Layer1 **/
 
-	zeroInput();
+ART2Network::Layer1::Layer1():
+	parent(NULL) {
+	p = q = u = v = w = x = NULL;
 }
 
-ART2Network::weight_vector ART2Network::Layer1::feedforward(const input_vector const &I) {
-	this->I = I;
+ART2Network::Layer1::Layer1(ART2Network &parent):
+	parent(&parent) {
+	initVectors();
 }
 
-ART2Network::weight_vector const ART2Network::Layer1::output() const {
+const ART2Network::weight_vector ART2Network::Layer1::operator()(const input_vector I) {
+	iterate(I, NULL, 0);
 	return p;
 }
 
+
+const ART2Network::weight_vector ART2Network::Layer1::operator()(const input_vector I, const weight_vector y, dimension y_dimension) {
+	iterate(I, y, y_dimension);
+	return p;
+}
+
+
+void ART2Network::Layer1::setParent(const ART2Network &parent) {
+	this->parent = &parent;
+
+	if (p != NULL) delete p;
+	if (q != NULL) delete q;
+	if (u != NULL) delete u;
+	if (v != NULL) delete v;
+	if (w != NULL) delete w;
+	if (x != NULL) delete x;
+
+	initVectors();
+}
+
+
 void ART2Network::Layer1::zeroInput() {
-	for (index i = 0; i < input_dimension; ++i) {
+	dimension m = parent->input_dimension;
+	for (index i = 0; i < m; ++i)
 		p[i] = q[i] = u[i] = v[i] = w[i] = x[i] = 0.0;
+}
+
+
+ART2Network::weight ART2Network::Layer1::feedback(index i, const weight_vector y, dimension y_dimension) {
+	weight feedback = 0.0;
+	const_weight_matrix W = parent->weights();
+
+	if (y_dimension > 0 && y != NULL) {
+		for (index j = 0; j < y_dimension; ++i) {
+			if (y[j] > 0.0)
+				feedback += parent->d * W[i][j];
+		}
+	}
+
+	return feedback;
+}
+
+
+void ART2Network::Layer1::iterate(input_vector const I, weight_vector const y, dimension y_dimension) {
+	dimension m = parent->input_dimension;
+
+	enum vector_index {P, Q, U, V, W, X, VECTOR_COUNT};
+	weight_vector temp[VECTOR_COUNT];
+	for (index i = 0; i < VECTOR_COUNT; ++i)
+		temp[i] = new weight[m];
+
+	weight a = parent->a;
+	weight b = parent->b;
+	weight e = parent->e;
+	weight theta = parent->theta;
+	weight (&f)(weight, weight) = *parent->f;
+
+	weight norm_p = ART2Network::norm(p, m);
+	weight norm_v = ART2Network::norm(v, m);
+	weight norm_w = ART2Network::norm(w, m);
+
+	for (index i = 0; i < m; ++i) {
+		temp[P][i] = u[i] + feedback(i, y, y_dimension);
+		temp[Q][i] = p[i] / (e + norm_p);
+		temp[U][i] = v[i] / (e + norm_v);
+		temp[V][i] = f(theta, x[i]) + b * f(theta, q[i]);
+		temp[W][i] = I[i] + a * u[i];
+		temp[X][i] = w[i] / (e + norm_w);
+	}
+
+	for (index i = 0; i < m; ++i) {
+		p[i] = temp[P][i];
+		q[i] = temp[Q][i];
+		u[i] = temp[U][i];
+		v[i] = temp[V][i];
+		w[i] = temp[W][i];
+		x[i] = temp[X][i];
 	}
 }
 
-void ART2Network::Layer1::update_p() {
 
-	weight (&g)(weight) = parent.g;
-	weight_matrix const z = parent.weights();
-	weight_vector const y = parent.F2.output();
+void ART2Network::Layer1::initVectors() {
+	dimension m = parent->input_dimension;
 
-	size_t node_count = parent.F2.getNodeCount();
+	p = new weight[m];
+	q = new weight[m];
+	u = new weight[m];
+	v = new weight[m];
+	w = new weight[m];
+	x = new weight[m];
 
-	for (index i = 0; i < input_dimension; ++i) {
-		weight feedback = 0.0;
-		for (index j = 0; j < 0; ++j) {
-			feedback += g(y[j]) * z[j][i];
-		}
-		p[i] = u[i] + a * feedback;
-	}
+	for (index i = 0; i < m; ++i)
+		p[i] = q[i] = u[i] = v[i] = w[i] = x[i] = 0.0;
+}
+
+
+/** Layer 2 **/
+
+ART2Network::Layer2::Layer2():
+	Maxnet(), parent(NULL) {
+}
+
+
+ART2Network::Layer2::Layer2(const ART2Network &parent):
+	Maxnet(), parent(&parent) {
 }
