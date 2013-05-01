@@ -8,7 +8,7 @@
 #include "Maxnet.h"
 
 
-/* Friends */
+/* Static */
 
 Maxnet::input Maxnet::BASIC_SIGNAL_FUNC(weight x) {
 	if (x >= 0)

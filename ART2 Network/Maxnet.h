@@ -29,9 +29,9 @@ public:
 	virtual ~Maxnet();
 
 	Maxnet &operator=(const Maxnet &maxnet);
-	void operator()(input_vector const x);  // iterates until winner chosen
+	void operator()(const input_vector x);  // iterates until winner chosen
 
-	input_vector const output() const { return signal; }
+	const input_vector output() const { return signal; }
 	size_t getNodeCount() const { return node_count; }
 
 	static input BASIC_SIGNAL_FUNC(weight x);
