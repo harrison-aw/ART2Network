@@ -10,6 +10,8 @@
 
 #include <cstddef>
 
+#include "Maxnet.h"
+
 class ART2Network {
 public:
 	typedef size_t index;
@@ -22,6 +24,13 @@ public:
 	typedef weight *weight_vector;
 	typedef weight_vector *weight_matrix;
 
+	ART2Network();
+	ART2Network(const ART2Network &art2network);
+	ART2Network(dimension M, weight a, weight b, weight c, weight d, weight e, weight theta, weight rho);
+	virtual ~ART2Network();
+
+	ART2Network &operator=(const ART2Network &art2network);
+
 	class Layer1 {
 	public:
 		Layer1(const ART2Network &parent);
@@ -30,32 +39,30 @@ public:
 		const ART2Network &parent;
 	};
 
-	class Layer2 {
+	class Layer2: public Maxnet {
 	public:
 		Layer2(const ART2Network &parent);
+
 	private:
-		weight_vector output;
+		const ART2Network &parent;
 	};
 
-	ART2Network(dimension M, weight a, weight b, weight c, weight d, weight e, weight theta, weight rho);
-	virtual ~ART2Network();
+	weight a;
+	weight b;
+	weight c;
+	weight d;
+	weight e;
+	weight theta;
+	weight rho;
 
-	void iterate(input x);
-
+	Layer1 F1;
+	Layer2 F2;
 
 private:
-	ART2Network() {};
-	ART2Network(const ART2Network &art2network) {};
-	ART2Network &operator=(const ART2Network&) {};
 
-	double a;
-	double b;
-	double c;
-	double d;
-	double e;
-	double theta;
-	double rho;
+	void initZ();
 
+	dimension input_dimension;
 	weight_matrix z;
 
 };
