@@ -159,7 +159,7 @@ void ART2Network::Layer1::iterate(const input_vector I, const weight_vector y, d
 	weight norm_v = ART2Network::norm(v, m);
 	weight norm_w = ART2Network::norm(w, m);
 
-	const weight_vector g_y = parent->F2.gated_output();
+	//const weight_vector g_y = parent->F2.gated_output();
 
 	for (index i = 0; i < m; ++i) {
 		temp[P][i] = u[i] + feedback(i, y, y_dimension);
