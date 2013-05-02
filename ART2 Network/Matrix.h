@@ -8,6 +8,8 @@
 #ifndef MATRIX_H_
 #define MATRIX_H_
 
+#include "indextypes.h"
+#include "nnexceptions.h"
 #include "Vector.h"
 
 namespace art2nn {
@@ -20,6 +22,8 @@ template<class T> Matrix<T> operator*(const Matrix<T>&, T);
 template<class T> Vector<T> operator*(const Matrix<T>&, const Vector<T>&);
 template<class T> Vector<T> operator*(const Vector<T>&, const Matrix<T>&);
 template<class T> Matrix<T> operator*(const Matrix<T>&, const Matrix<T>&);
+template<class T> bool operator==(const Matrix<T>&, const Matrix<T>&);
+template<class T> bool operator!=(const Matrix<T>&, const Matrix<T>&);
 
 template<class T>
 class Matrix {
@@ -36,13 +40,15 @@ public:
 	friend Vector<T> operator*<>(const Matrix<T>&, const Vector<T>&);
 	friend Vector<T> operator*<>(const Vector<T>&, const Matrix<T>&);
 	friend Matrix<T> operator*<>(const Matrix<T>&, const Matrix<T>&);
+	friend bool operator==<>(const Matrix<T> &left, const Matrix<T> &right);
+	friend bool operator!=<>(const Matrix<T> &left, const Matrix<T> &right);
 
 	Matrix<T> &operator=(const Matrix &matrix);
 	Matrix<T> &operator+=(const Matrix &matrix);
 	Matrix<T> &operator-=(const Matrix &matrix);
 	Matrix<T> operator-() const;
 
-	T operator()(index i, index j);
+	T operator()(index i, index j) const;
 	T operator()(index i, index j, T entry);
 
 	Vector<T> row(index i) const { return Vector<T>(m, entries[i]); }
@@ -168,6 +174,24 @@ Matrix<T> operator*(const Matrix<T> &left, const Matrix<T> &right) {
 }
 
 template<class T>
+bool operator==(const Matrix<T> &left, const Matrix<T> &right) {
+	if (left.n != right.n || left.m != right.m)
+		return false;
+	for (index i = 0; i < left.n; ++i) {
+		for (index j = 0; j < left.m; ++i) {
+			if (left.entries[i][j] != right.entries[i][j])
+				return false;
+		}
+	}
+	return true;
+}
+
+template<class T>
+bool operator!=(const Matrix<T> &left, const Matrix<T> &right) {
+	return !(left == right);
+}
+
+template<class T>
 Matrix<T> &Matrix<T>::operator=(const Matrix<T> &matrix) {
 	if (this != &matrix) {
 		if (n > 0 && m > 0) {
@@ -229,7 +253,7 @@ Matrix<T> Matrix<T>::operator-() const {
 }
 
 template<class T>
-T Matrix<T>::operator()(index i, index j) {
+T Matrix<T>::operator()(index i, index j) const {
 	return entries[i][j];
 }
 

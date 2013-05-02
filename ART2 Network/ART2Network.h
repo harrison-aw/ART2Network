@@ -8,123 +8,93 @@
 #ifndef ART2NETWORK_H_
 #define ART2NETWORK_H_
 
-#include <cmath>
-#include <cstddef>
-
+#include "nntypes.h"
 #include "Maxnet.h"
 
+namespace art2nn {
 
 class ART2Network {
 public:
-	typedef size_t index;
-	typedef size_t dimension;
+	class Layer1;
+	class Layer2;
+	class Vigilance;
 
-	typedef double input;
-	typedef input *input_vector;
-
-	typedef double weight;
-	typedef weight *weight_vector;
-	typedef weight_vector *weight_matrix;
-	typedef const weight *const *const_weight_matrix;
-
-	ART2Network();
-	ART2Network(const ART2Network &art2network);
-	ART2Network(dimension input_dimension, weight a, weight b, weight c, weight d, weight e, weight theta, weight rho);
+	ART2Network(dimension input_dimension, param a, param b, param c, param d, param e, param theta, param rho);
 	virtual ~ART2Network();
 
-	ART2Network &operator=(const ART2Network &art2network);
+	index operator()(const input_vector &I);
 
-	const_weight_matrix weights() const { return W; }
-
-	// Network signal functions
-	static weight NONLINEAR_SIGNAL_FUNC(weight theta, weight x);
-	static weight LINEAR_SIGNAL_FUNC(weight theta, weight x);
-	static weight HEAVISIDE_STEP_FUNC(weight d, weight x);
-
-	static weight norm(const weight_vector vector, dimension m);
-	static weight dotProduct(const weight_vector a, const weight_vector b, dimension m);
+	friend class Layer1;
+	friend class Layer2;
+	friend class Vigilance;
 
 	class Layer1 {
 	public:
-		Layer1();
-		Layer1(ART2Network &parent);
-
-		const weight_vector operator()(const input_vector I);
-		const weight_vector operator()(const input_vector I, const weight_vector y, dimension y_dimension);
-
-		void setParent(const ART2Network &parent);
+		Layer1(const ART2Network &parent);
 
 		void zeroInput();
-		const weight_vector output() const { return p; }
 
-		const weight_vector getP() const { return p; };
-		const weight_vector getQ() const { return q; };
-		const weight_vector getU() const { return u; };
-		const weight_vector getV() const { return v; };
-		const weight_vector getW() const { return w; };
-		const weight_vector getX() const { return x; };
+		signal_vector operator()(const input_vector I);
 
+		friend class Vigilance;
 	private:
-		weight feedback(index i, weight_vector const y, dimension y_dimension);
-		void iterate(const input_vector I, const weight_vector y, dimension y_dimension);
-
 		void initVectors();
 
-		const ART2Network *parent;
+		const ART2Network &parent;
 
-		weight_vector p;
-		weight_vector q;
-		weight_vector u;
-		weight_vector v;
-		weight_vector w;
-		weight_vector x;
+		signal_vector p;
+		signal_vector q;
+		signal_vector u;
+		signal_vector v;
+		signal_vector w;
+		signal_vector x;
 	};
 
 	class Layer2: public Maxnet {
 	public:
-		Layer2();
 		Layer2(const ART2Network &parent);
 
-		const weight_vector gated_output() const;
-
+		friend class Vigilance;
 	private:
 		const ART2Network *parent;
 	};
 
-	class OrientingSubsystem {
+	class Vigilance {
 	public:
-		OrientingSubsystem(const ART2Network &parent);
+		Vigilance(const ART2Network &parent);
 
-		const weight_vector operator()(const weight_vector u, const weight_vector p);
+		const weight_vector operator()();
 
 	private:
 		const ART2Network *parent;
 
-		weight_vector r;
+		signal_vector r;
 	};
-
-	weight a;
-	weight b;
-	weight c;
-	weight d;
-	weight e;
-	weight theta;
-	weight rho;
 
 protected:
 	weight_matrix weight_deltas();
 
-
 private:
 	dimension input_dimension;
-	weight_matrix W;
-	weight (*f)(weight, weight);
-	weight (*g)(weight, weight);
 
-public:
+	param a;
+	param b;
+	param c;
+	param d;
+	param e;
+	param theta;
+	param rho;
+
+	signal (*f)(param, signal);
+	signal (*g)(param, signal);
+
+	weight_matrix W;
+
 	Layer1 F1;
 	Layer2 F2;
-};
+}; /* class ART2Network */
+
+} /* namespace art2nn */
 
 #endif /* ART2NETWORK_H_ */
 

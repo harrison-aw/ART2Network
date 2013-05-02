@@ -6,152 +6,85 @@
  */
 
 #include "Maxnet.h"
+#include "functions.h"
 
-
-/* Static */
-
-Maxnet::input Maxnet::BASIC_SIGNAL_FUNC(weight x) {
-	if (x >= 0)
-		return x;
-	return 0;
-}
-
-
-/* Constructors */
+using namespace art2nn;
 
 Maxnet::Maxnet():
-	node_count(0), f(BASIC_SIGNAL_FUNC) {
-	initSignal();
+	node_count(0), f(SIMPLE_SIGNAL_FUNCTION) {
 	initW(1.0, 1.0);
 }
 
+Maxnet::Maxnet(const Maxnet &maxnet):
+	node_count(maxnet.node_count), f(maxnet.f), signals(maxnet.signals), W(maxnet.W) {
+}
 
 Maxnet::Maxnet(size_t node_count):
-	node_count(node_count), f(&BASIC_SIGNAL_FUNC) {
-	initSignal();
+	node_count(node_count), f(SIMPLE_SIGNAL_FUNCTION), signals(node_count), W(node_count, node_count) {
 	initW(1.0/node_count, 1.0);
 }
 
-
-Maxnet::Maxnet(size_t node_count, weight epsilon, weight theta):
-	node_count(node_count), f(&BASIC_SIGNAL_FUNC) {
-	initSignal();
+Maxnet::Maxnet(size_t node_count, param epsilon, param theta):
+	node_count(node_count), f(SIMPLE_SIGNAL_FUNCTION) {
 	initW(epsilon, theta);
 }
 
-Maxnet::Maxnet(const Maxnet &maxnet):
-	node_count(maxnet.node_count), f(maxnet.f) {
-
-	signal = new input[node_count];
-	for (index i = 0; i < node_count; ++i)
-		signal[i] = maxnet.signal[i];
-
-	W = new weight_vector[node_count];
-	for (index j = 0; j < node_count; ++j) {
-		W[j] = new weight[node_count];
-		for (index i = 0; i < node_count; ++i)
-			W[j][i] = maxnet.W[j][i];
-	}
+Maxnet::Maxnet(size_t node_count, param epsilon, param theta, signal (&f)(signal)):
+	node_count(node_count), f(&f) {
+	initW(epsilon, theta);
 }
-
-
-/* Destructor */
 
 Maxnet::~Maxnet() {
-	delete signal;
-
-	for (index j = 0; j < node_count; ++j)
-		delete W[j];
-	delete W;
 }
 
-
-/* Operators */
-
 Maxnet &Maxnet::operator=(const Maxnet &maxnet) {
-	if (node_count != maxnet.node_count) {
-		delete signal;
-		for (index i = 0; i < node_count; ++i)
-			delete W[i];
-		delete W;
-
-		signal = new input[maxnet.node_count];
-		W = new weight_vector[maxnet.node_count];
-		for (index i = 0; i < maxnet.node_count; ++i)
-			W[i] = new weight[maxnet.node_count];
+	if (this != &maxnet) {
+		node_count = maxnet.node_count;
+		signals = maxnet.signals;
+		W = maxnet.W;
+		f = maxnet.f;
 	}
-
-	node_count = maxnet.node_count;
-	f = maxnet.f;
-	for (index j = 0; j < node_count; ++j) {
-		signal[j] = maxnet.signal[j];
-		for (index i = 0; i < node_count; ++i)
-			W[j][i] = maxnet.W[j][i];
-	}
-
 	return *this;
 }
 
-void Maxnet::operator()(input_vector const I) {
+const signal_vector &Maxnet::operator()(const input_vector &I) {
 	unsigned int non_zero_count;
 
-	setSignal(I);
+	setSignals(I);
 
 	do {
 		iterate();
 
 		non_zero_count = 0;
 		for (index j = 0; j < node_count; ++j) {
-			if (signal[j] > 0)
+			if (signals[j] > 0)
 				++non_zero_count;
 		}
 	} while (non_zero_count > 1);
+
+	return signals;
 }
-
-
-/* Methods */
-
-Maxnet::weight Maxnet::net(index j) const {
-	weight net = 0;
-	for (index i = 0; i < node_count; ++i)
-		net += W[j][i] * signal[i];
-	return net;
-}
-
 
 void Maxnet::iterate() {
 	input temp[node_count];
 	for (index j = 0; j < node_count; ++j)
 		temp[j] = f(net(j));
 	for (index j = 0; j < node_count; ++j)
-		signal[j] = temp[j];
+		signals[j] = temp[j];
 }
 
-
-void Maxnet::initSignal() {
-	signal = new input[node_count];
-	for (index i = 0; i < node_count; ++i)
-		signal[0] = 0;
-}
-
-
-void Maxnet::initW(weight epsilon, weight theta) {
-	W = new weight_vector[node_count];
-
-	for (index j = 0; j < node_count; ++j) {
-		W[j] = new weight[node_count];
-
-		for (index i = 0; i < node_count; ++i) {
-			if (j != i)
-				W[j][i] = -epsilon;
+void Maxnet::initW(param epsilon, param theta) {
+	for (index i = 0; i < node_count; ++i) {
+		for (index j = 0; j < node_count; ++j) {
+			if (i != j)
+				W(i, j, -epsilon);
 			else
-				W[j][i] = theta;
+				W(i, j, theta);
 		}
 	}
 }
 
-
-void Maxnet::setSignal(input_vector const I) {
+void Maxnet::setSignals(const input_vector &I) {
 	for (index i = 0; i < node_count; ++i)
-		signal[i] = I[i];
+		signals[i] = I[i];
 }

@@ -8,53 +8,41 @@
 #ifndef MAXNET_H_
 #define MAXNET_H_
 
-#include <cstddef>
+#include "Matrix.h"
+#include "nntypes.h"
+
+namespace art2nn {
 
 class Maxnet {
 public:
-	typedef size_t index;
-
-	typedef double input;
-	typedef input *input_vector;
-
-	typedef double weight;
-	typedef weight *weight_vector;
-	typedef weight_vector *weight_matrix;
-
 	Maxnet();
-	Maxnet(size_t node_count);
-	Maxnet(size_t node_count, weight epsilon, weight theta);
-	Maxnet(size_t node_count, weight epsilon, weight theta, input (&f)(weight));
 	Maxnet(const Maxnet &maxnet);
+	Maxnet(size_t node_count);
+	Maxnet(size_t node_count, param epsilon, param theta);
+	Maxnet(size_t node_count, param epsilon, param theta, signal (&f)(signal));
 	virtual ~Maxnet();
 
 	Maxnet &operator=(const Maxnet &maxnet);
-	void operator()(const input_vector x);  // iterates until winner chosen
+	const signal_vector &operator()(const input_vector &I);  // iterates until winner chosen
 
-	const input_vector output() const { return signal; }
+	const signal_vector &output() const { return signals; }
 	size_t getNodeCount() const { return node_count; }
 
-	static input BASIC_SIGNAL_FUNC(weight x);
-
 protected:
-	weight net(index j) const;
+	signal net(index j) const { return W.column(j) * signals; }
 	void iterate();
 
-	size_t node_count;
-	input (*f)(weight);
-	weight_matrix W;  // connection weights
-
 private:
-	void initSignal();
-	void initW(weight epsilon, weight theta);
+	void initW(param epsilon, param theta);
+	void setSignals(const input_vector &I);
 
-	void setSignal(input_vector const I);
-
-	input_vector signal;
+	size_t node_count;
+	signal (*f)(signal);
+	signal_vector signals;
+	weight_matrix W;  // connection weights
 };
 
-
-/* Implementation */
+} /* namespace art2nn */
 
 #endif /* MAXNET_H_ */
 

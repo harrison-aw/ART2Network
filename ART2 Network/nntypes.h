@@ -8,18 +8,22 @@
 #ifndef TYPES_H_
 #define TYPES_H_
 
-#include <cstddef>
-#include <stdexcept>
+#include "indextypes.h"
+#include "Vector.h"
+#include "Matrix.h"
 
 namespace art2nn {
 
-typedef size_t index;
-typedef size_t dimension;
+typedef double param;
+typedef double signal;
+typedef double weight;
+typedef double input;
 
-class dimension_error: public std::length_error {
-public:
-	explicit dimension_error(const std::string &what_arg): std::length_error(what_arg) {};
-};
+typedef Vector<signal> signal_vector;
+typedef Vector<weight> weight_vector;
+typedef Vector<input> input_vector;
+
+typedef Matrix<weight> weight_matrix;
 
 } /* namespace art2nn */
 

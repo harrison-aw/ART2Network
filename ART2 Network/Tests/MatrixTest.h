@@ -37,6 +37,7 @@ bool MatrixTest() {
 	c.row(1);
 	c.column(2);
 
+	c == c;
 
 	return true;
 }

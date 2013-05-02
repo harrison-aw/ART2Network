@@ -8,19 +8,31 @@
 #ifndef VECTORTEST_H_
 #define VECTORTEST_H_
 
-#include <iostream>
+#include <cassert>
 
 #include "../Vector.h"
 
 using namespace art2nn;
 
-bool VectorTest() {
-	double array[5] = {1, 2, 3, 4, 5};
+void VectorTest() {
+	Vector<double> a, b;
 
-	Vector<double> a;
-	Vector<double> b(a);
-	Vector<double> c(5);
+	assert(a==b);
+
+	double array[] = {1, 2, 3, 4, 5};
 	Vector<double> d(5, array);
+	Vector<double> c(d);
+
+	assert(d == c);
+
+	d += d;
+	c *= 2;
+
+	assert(d == c);
+
+	d -= c;
+
+	assert(d + c == c);
 
 	d - c;
 	d + c;
@@ -39,8 +51,6 @@ bool VectorTest() {
 	a.norm();
 	a.project(2);
 	a.project(10);
-
-	return true;
 }
 
 

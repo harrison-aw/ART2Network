@@ -10,7 +10,8 @@
 
 #include <cmath>
 
-#include "nntypes.h"
+#include "indextypes.h"
+#include "nnexceptions.h"
 
 namespace art2nn {
 
@@ -20,6 +21,7 @@ template<class T> Vector<T> operator-(const Vector<T>&, const Vector<T>&);
 template<class T> Vector<T> operator*(T, const Vector<T>&);
 template<class T> Vector<T> operator*(const Vector<T>&, T);
 template<class T> T operator*(const Vector<T>&, const Vector<T>&);
+template<class T> bool operator==(const Vector<T>&, const Vector<T>&);
 
 template<class T>
 class Vector {
@@ -35,6 +37,7 @@ public:
 	friend Vector<T> operator*<>(T left, const Vector<T> &right);
 	friend Vector<T> operator*<>(const Vector<T> &left, T right);
 	friend T operator*<>(const Vector<T> &left, const Vector<T> &right);
+	friend bool operator==<>(const Vector<T> &left, const Vector<T> &right);
 
 	Vector<T> &operator=(const Vector<T> &vector);
 	Vector<T> &operator+=(const Vector<T> &vector);
@@ -42,6 +45,7 @@ public:
 	Vector<T> &operator*=(T scalar);
 	Vector<T> operator-() const;
 	T &operator[](index i);
+	const T &operator[](index i) const;
 
 	T norm() const;
 	Vector<T> project(dimension m) const;
@@ -139,6 +143,17 @@ T operator*(const Vector<T> &left, const Vector<T> &right) {
 }
 
 template<class T>
+bool operator==(const Vector<T> &left, const Vector<T> &right) {
+	if (left.n != right.n)
+		return false;
+	for (index i = 0; i < left.n; ++i) {
+		if (left.coords[i] != right.coords[i])
+			return false;
+	}
+	return true;
+}
+
+template<class T>
 Vector<T> &Vector<T>::operator=(const Vector<T> &vector) {
 	if (this != &vector) {
 		delete coords;
@@ -183,6 +198,13 @@ T &Vector<T>::operator[](index i) {
 }
 
 template<class T>
+const T &Vector<T>::operator[](index i) const {
+	if (i >= n)
+		throw dimension_error("index beyond vector dimensions");
+	return coords[i];
+}
+
+template<class T>
 T Vector<T>::norm() const {
 	T norm = 0;
 	for (index i = 0; i < n; ++i)
@@ -201,4 +223,5 @@ Vector<T> Vector<T>::project(dimension m) const {
 }
 
 } /* namespace art2nn */
+
 #endif /* VECTOR_H_ */

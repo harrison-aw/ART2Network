@@ -8,12 +8,14 @@
 
 #include "Tests/VectorTest.h"
 #include "Tests/MatrixTest.h"
+#include "Tests/MaxnetTest.h"
 
 
 int main() {
 
 	VectorTest();
 	MatrixTest();
+	MaxnetTest();
 
 	return 0;
 }
