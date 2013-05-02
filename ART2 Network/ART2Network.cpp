@@ -15,12 +15,23 @@ ART2Network::ART2Network(dimension input_dimension, param a, param b, param c, p
 	a(a), b(b), c(c), d(d), e(e), theta(theta), rho(rho),
 	f(LINEAR_SIGNAL_FUNCTION), g(HEAVISIDE_SIGNAL_FUNCTION),
 	F1(*this), F2(*this) {
+
+
 }
 
 ART2Network::~ART2Network() {
 }
 
-ART2Network::
+art2nn::index ART2Network::operator()(const input_vector &I) {
+	signal_vector out = F2(F1(I));
+
+	for (index i = 0; i < out.dim(); ++i) {
+		if (out[i] > 0)
+			return i;
+	}
+
+	return 0;
+}
 
 
 /* Layer1 */
@@ -114,6 +125,7 @@ void ART2Network::Layer2::addNode() {
 	W = newW;
 	reset();
 }
+
 
 /* Vigil */
 

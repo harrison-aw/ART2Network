@@ -16,6 +16,12 @@ using namespace art2nn;
 
 void ART2NetworkTest() {
 	ART2Network a(2, .2, 0, 0, .2, .001, .4, .3);
+
+	input_vector I(2);
+	I[0] = 1.0;
+	I[1] = 1.0;
+
+
 }
 
 
