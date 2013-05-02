@@ -15,42 +15,57 @@
 using namespace art2nn;
 
 void VectorTest() {
-	Vector<double> a, b;
-
-	assert(a==b);
-
 	double array[] = {1, 2, 3, 4, 5};
+
+	Vector<double> a;
+	Vector<double> b(a);
+	Vector<double> c(5);
 	Vector<double> d(5, array);
-	Vector<double> c(d);
-
-	assert(d == c);
-
-	d += d;
-	c *= 2;
-
-	assert(d == c);
-
-	d -= c;
-
-	assert(d + c == c);
 
 	d - c;
 	d + c;
-	5.0 * d;
-	d * 5.0;
-	d * c;
+	1.0 * d;
+	d * 1.0;
+	d / 2.0;
 
-	a = d;
+	d * d;
 
-	a += d;
-	a -= d;
-	a *= 10;
-	-a;
-	a[1];
+	d == d;
+	d != c;
 
-	a.norm();
-	a.project(2);
-	a.project(10);
+	c = d;
+	c += d;
+	c -= d;
+	c *= 2.0;
+	c /= 1.5;
+	-c;
+	c[1];
+	c[2] = 10;
+
+	c.norm();
+	c.project(2);
+
+	c.dim();
+
+
+	/* Begin Testing */
+
+	Vector<double> nullv, v1(5, array), v2(v1), v3(5), v4(4);
+
+	assert(nullv.dim() == 0);
+	assert(nullv.norm() == 0);
+	assert(nullv == -nullv);
+	assert(nullv - nullv == nullv);
+
+	assert(v1 == v2);
+	assert(v1 + v1 == 2.0 * v2);
+	assert(v1 - v2 == v3);
+	assert(v1 == 2.0 * v2 / 2.0);
+	assert(v1 - v1 / 2.0 == v1 + -(v1/2.0));
+
+	assert(v3.project(4) == v4);
+	assert(v4.project(5) == v3);
+	assert(v4.dim() == 4);
 }
 
 

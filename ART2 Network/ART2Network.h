@@ -17,7 +17,7 @@ class ART2Network {
 public:
 	class Layer1;
 	class Layer2;
-	class Vigilance;
+	class Vigil;
 
 	ART2Network(dimension input_dimension, param a, param b, param c, param d, param e, param theta, param rho);
 	virtual ~ART2Network();
@@ -26,7 +26,7 @@ public:
 
 	friend class Layer1;
 	friend class Layer2;
-	friend class Vigilance;
+	friend class Vigil;
 
 	class Layer1 {
 	public:
@@ -36,7 +36,7 @@ public:
 
 		signal_vector operator()(const input_vector I);
 
-		friend class Vigilance;
+		friend class Vigil;
 	private:
 		void initVectors();
 
@@ -54,19 +54,24 @@ public:
 	public:
 		Layer2(const ART2Network &parent);
 
-		friend class Vigilance;
+		void reset();
+		void suppress(index j);
+		unsigned int unsuppressedNodeCount();
+		void addNode();
+
+		friend class Vigil;
 	private:
-		const ART2Network *parent;
+		const ART2Network &parent;
 	};
 
-	class Vigilance {
+	class Vigil {
 	public:
-		Vigilance(const ART2Network &parent);
+		Vigil(const ART2Network &parent);
 
-		const weight_vector operator()();
+		bool operator()();
 
 	private:
-		const ART2Network *parent;
+		const ART2Network &parent;
 
 		signal_vector r;
 	};

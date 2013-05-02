@@ -51,10 +51,14 @@ public:
 	T operator()(index i, index j) const;
 	T operator()(index i, index j, T entry);
 
+	Matrix<T> transpose() const;
+
 	Vector<T> row(index i) const { return Vector<T>(m, entries[i]); }
 	Vector<T> column(index j) const { return Vector<T>(n, transposed_entries[j]); }
 
-	Matrix<T> transpose() const;
+	dimension row_dim() const { return m; };
+	dimension col_dim() const { return n; };
+
 private:
 	void buildTransposedEntries();
 
@@ -194,7 +198,7 @@ bool operator!=(const Matrix<T> &left, const Matrix<T> &right) {
 template<class T>
 Matrix<T> &Matrix<T>::operator=(const Matrix<T> &matrix) {
 	if (this != &matrix) {
-		if (n > 0 && m > 0) {
+		if (n > 0 && m > 0 && n != matrix.n && m != matrix.m) {
 			for (index i = 0; i < n; ++i)
 				delete entries[i];
 			delete entries;

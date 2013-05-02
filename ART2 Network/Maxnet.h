@@ -19,7 +19,7 @@ public:
 	Maxnet(const Maxnet &maxnet);
 	Maxnet(size_t node_count);
 	Maxnet(size_t node_count, param epsilon, param theta);
-	Maxnet(size_t node_count, param epsilon, param theta, signal (&f)(signal));
+	Maxnet(size_t node_count, param epsilon, param theta, signal (*f)(signal));
 	virtual ~Maxnet();
 
 	Maxnet &operator=(const Maxnet &maxnet);
@@ -32,14 +32,13 @@ protected:
 	signal net(index j) const { return W.column(j) * signals; }
 	void iterate();
 
-private:
-	void initW(param epsilon, param theta);
-	void setSignals(const input_vector &I);
-
 	size_t node_count;
 	signal (*f)(signal);
 	signal_vector signals;
 	weight_matrix W;  // connection weights
+private:
+	void initW(param epsilon, param theta);
+	void setSignals(const input_vector &I);
 };
 
 } /* namespace art2nn */

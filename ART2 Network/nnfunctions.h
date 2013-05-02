@@ -5,8 +5,8 @@
  *      Author: Tony
  */
 
-#ifndef FUNCTIONS_H_
-#define FUNCTIONS_H_
+#ifndef NNFUNCTIONS_H_
+#define NNFUNCTIONS_H_
 
 #include "nntypes.h"
 
@@ -22,4 +22,4 @@ signal_vector vectorApply(signal_vector vector, signal (*f)(param, signal), para
 
 } /* namespace art2nn */
 
-#endif /* FUNCTIONS_H_ */
+#endif /* NNFUNCTIONS_H_ */

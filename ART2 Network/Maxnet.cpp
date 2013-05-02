@@ -6,7 +6,7 @@
  */
 
 #include "Maxnet.h"
-#include "functions.h"
+#include "nnfunctions.h"
 
 using namespace art2nn;
 
@@ -25,12 +25,12 @@ Maxnet::Maxnet(size_t node_count):
 }
 
 Maxnet::Maxnet(size_t node_count, param epsilon, param theta):
-	node_count(node_count), f(SIMPLE_SIGNAL_FUNCTION) {
+	node_count(node_count),  f(SIMPLE_SIGNAL_FUNCTION) {
 	initW(epsilon, theta);
 }
 
-Maxnet::Maxnet(size_t node_count, param epsilon, param theta, signal (&f)(signal)):
-	node_count(node_count), f(&f) {
+Maxnet::Maxnet(size_t node_count, param epsilon, param theta, signal (*f)(signal)):
+	node_count(node_count), f(f) {
 	initW(epsilon, theta);
 }
 

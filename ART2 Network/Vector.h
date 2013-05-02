@@ -20,8 +20,10 @@ template<class T> Vector<T> operator+(const Vector<T>&, const Vector<T>&);
 template<class T> Vector<T> operator-(const Vector<T>&, const Vector<T>&);
 template<class T> Vector<T> operator*(T, const Vector<T>&);
 template<class T> Vector<T> operator*(const Vector<T>&, T);
+template<class T> Vector<T> operator/(const Vector <T>&, T);
 template<class T> T operator*(const Vector<T>&, const Vector<T>&);
 template<class T> bool operator==(const Vector<T>&, const Vector<T>&);
+template<class T> bool operator!=(const Vector<T>&, const Vector<T>&);
 
 template<class T>
 class Vector {
@@ -36,13 +38,16 @@ public:
 	friend Vector<T> operator+<>(const Vector<T> &left, const Vector<T> &right);
 	friend Vector<T> operator*<>(T left, const Vector<T> &right);
 	friend Vector<T> operator*<>(const Vector<T> &left, T right);
+	friend Vector<T> operator/<>(const Vector<T> &left, T right);
 	friend T operator*<>(const Vector<T> &left, const Vector<T> &right);
 	friend bool operator==<>(const Vector<T> &left, const Vector<T> &right);
+	friend bool operator!=<>(const Vector<T> &left, const Vector<T> &right);
 
 	Vector<T> &operator=(const Vector<T> &vector);
 	Vector<T> &operator+=(const Vector<T> &vector);
 	Vector<T> &operator-=(const Vector<T> &vector);
 	Vector<T> &operator*=(T scalar);
+	Vector<T> &operator/=(T scalar);
 	Vector<T> operator-() const;
 	T &operator[](index i);
 	const T &operator[](index i) const;
@@ -68,7 +73,7 @@ Vector<T>::Vector(const Vector<T> &vector):
 	if (n > 0) {
 		coords = new T[n];
 		for (index i = 0; i < n; ++i)
-			coords[i] = 0;
+			coords[i] = vector.coords[i];
 	}
 }
 
@@ -115,13 +120,6 @@ Vector<T> operator-(const Vector<T> &left, const Vector<T> &right) {
 }
 
 template<class T>
-Vector<T> &Vector<T>::operator*=(T scalar) {
-	for (index i = 0; i < n; ++i)
-		coords[i] = scalar * coords[i];
-	return *this;
-}
-
-template<class T>
 Vector<T> operator*(T left, const Vector<T> &right) {
 	Vector<T> product(right);
 	return product *= left;
@@ -130,6 +128,11 @@ Vector<T> operator*(T left, const Vector<T> &right) {
 template<class T>
 Vector<T> operator*(const Vector<T> &left, T right) {
 	return right * left;
+}
+
+template<class T>
+Vector<T> operator/(const Vector<T> &left, T right) {
+	return left * (1/right);
 }
 
 template<class T>
@@ -154,11 +157,18 @@ bool operator==(const Vector<T> &left, const Vector<T> &right) {
 }
 
 template<class T>
+bool operator!=(const Vector<T> &left, const Vector<T> &right) {
+	return !(left == right);
+}
+
+template<class T>
 Vector<T> &Vector<T>::operator=(const Vector<T> &vector) {
 	if (this != &vector) {
-		delete coords;
-		n = vector.n;
-		coords = new T[n];
+		if (n != vector.n) {
+			n = vector.n;
+			delete coords;
+			coords = new T[n];
+		}
 		for (index i = 0; i < n; ++i)
 			coords[i] = vector.coords[i];
 	}
@@ -170,16 +180,33 @@ Vector<T> &Vector<T>::operator+=(const Vector<T> &vector) {
 	if (n != vector.n)
 		throw dimension_error("vector dimensions must be equal to add");
 
-	for (index i = 0; i < n; ++i) {
+	for (index i = 0; i < n; ++i)
 		coords[i] += vector.coords[i];
-	}
-
 	return *this;
 }
 
 template<class T>
 Vector<T> &Vector<T>::operator-=(const Vector<T> &vector) {
-	return *this += -vector;
+	if (n != vector.n)
+		throw dimension_error("vector dimensions must be equal to subtract");
+
+	for (index i = 0; i < n; ++i)
+		coords[i] -= vector.coords[i];
+	return *this;
+}
+
+template<class T>
+Vector<T> &Vector<T>::operator*=(T scalar) {
+	for (index i = 0; i < n; ++i)
+		coords[i] *= scalar;
+	return *this;
+}
+
+template<class T>
+Vector<T> &Vector<T>::operator/=(T scalar) {
+	for (index i = 0; i < n; ++i)
+		coords[i] /= scalar;
+	return *this;
 }
 
 template<class T>
