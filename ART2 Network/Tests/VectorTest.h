@@ -15,25 +15,30 @@
 using namespace art2nn;
 
 bool VectorTest() {
+	double array[5] = {1, 2, 3, 4, 5};
+
 	Vector<double> a;
 	Vector<double> b(a);
-	Vector<double> c(10);
+	Vector<double> c(5);
+	Vector<double> d(5, array);
 
-	a = c;
-	c += c;
-	c -= a;
+	d - c;
+	d + c;
+	5.0 * d;
+	d * 5.0;
+	d * c;
 
-	for (art2nn::index i = 0; i < 10; ++i) {
-		c[i] = i + 1.0;
-		std::cout << c[i] << " ";
-	}
-	std::cout << std::endl;
+	a = d;
 
-	b = c;
+	a += d;
+	a -= d;
+	a *= 10;
+	-a;
+	a[1];
 
-	b *= 2;
-
-	std::cout << c * b << std::endl;
+	a.norm();
+	a.project(2);
+	a.project(10);
 
 	return true;
 }

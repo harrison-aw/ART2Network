@@ -7,11 +7,13 @@
 
 
 #include "Tests/VectorTest.h"
+#include "Tests/MatrixTest.h"
 
 
 int main() {
 
 	VectorTest();
+	MatrixTest();
 
 	return 0;
 }
