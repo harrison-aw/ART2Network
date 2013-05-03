@@ -36,6 +36,7 @@ public:
 
 		signal_vector operator()(const input_vector I);
 
+		friend class ART2Network;
 		friend class Layer2;
 		friend class Vigil;
 	private:
@@ -55,11 +56,16 @@ public:
 	public:
 		Layer2(const ART2Network &parent);
 
-		void reset();
+		index winner() const;
+		signal winnerSignal() const;
+
+		void resetWeights();
 		void suppress(index j);
+		void suppressWinner();
 		unsigned int unsuppressedNodeCount();
 		void addNode();
 
+		friend class ART2Network;
 		friend class Vigil;
 	private:
 		const ART2Network &parent;
@@ -78,9 +84,9 @@ public:
 	};
 
 protected:
-	weight_matrix weight_deltas();
+	void commitNode();
+	void learn();
 
-private:
 	dimension input_dimension;
 
 	param a;
@@ -94,7 +100,8 @@ private:
 	signal (*f)(param, signal);
 	signal (*g)(param, signal);
 
-	weight_matrix W;
+	weight_matrix bottom_up_W;
+	weight_matrix top_down_W;
 
 	Layer1 F1;
 	Layer2 F2;

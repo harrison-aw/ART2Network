@@ -9,6 +9,7 @@
 #include "nnfunctions.h"
 
 #include <iostream>
+#include <cmath>
 
 using namespace art2nn;
 
@@ -16,34 +17,62 @@ ART2Network::ART2Network(dimension input_dimension, param a, param b, param c, p
 	input_dimension(input_dimension),
 	a(a), b(b), c(c), d(d), e(e), theta(theta), rho(rho),
 	f(LINEAR_SIGNAL_FUNCTION), g(HEAVISIDE_SIGNAL_FUNCTION),
-	W(input_dimension, 0),
+	bottom_up_W(input_dimension, 0), top_down_W(0, input_dimension),
 	F1(*this), F2(*this), vigilance(*this) {
-	std::cout << "built network" << std::endl;
 }
 
 ART2Network::~ART2Network() {
 }
 
 art2nn::index ART2Network::operator()(const input_vector &I) {
-	std::cout << "   first pass" << std::endl;
-	signal_vector filtered = F1(I);
-	std::cout << "   compete" << std::endl;
-	signal_vector out = F2(filtered);
-	std::cout << "   feed back" << std::endl;
-	F1(I);
+	bool stable = false;
+	do {
+		std::cout << "made it here" << std::endl;
+		signal_vector filter = F1(I);
+		std::cout << "here now" << std::endl;
+		F2(filter);  // feed forward
+		F1(I);      // feed back
+		if (vigilance()) {  // if vigilance test is passed
+			stable = true;
+		} else {
+			if (F2.unsuppressedNodeCount() > 0)
+				F2.suppressWinner();
+			else
+				commitNode();
+		}
+	} while (!stable);
 
-	index J = 0;
-	for (; J < out.dim(); ++J) {
-		if (out[J] > 0.0)
-			break;
+	learn();
+
+	F2.resetWeights();
+
+	return F2.winner();
+}
+
+void ART2Network::commitNode() {
+	dimension category_count = F2.getNodeCount();
+
+	F2.addNode();
+
+	bottom_up_W.resize(input_dimension, category_count);
+	top_down_W.resize(F2.getNodeCount(), category_count);
+
+	// add connection weights to new node
+	index j = category_count - 1;
+	for (index i = 0; i < input_dimension; ++i) {
+		bottom_up_W(i, j, 1 / ((1 - d) * sqrt(input_dimension)));
+		top_down_W(j, i, 0);
 	}
+}
 
-	std::cout << "   vigilance test" << std::endl;
-	if (vigilance()) {
-		return 1;
+void ART2Network::learn() {
+	index J = F2.winner();
+	const signal_vector &p = F1.p;
+
+	for (index i = 0; i < input_dimension; ++i) {
+		bottom_up_W(i, J, bottom_up_W(i, J) + d * (p[i] - bottom_up_W(i, J)));
+		top_down_W(J, i, top_down_W(J, i) + d * (p[i] - top_down_W(J, i)));
 	}
-
-	return 0;
 }
 
 
@@ -68,29 +97,18 @@ signal_vector ART2Network::Layer1::operator()(input_vector I) {
 	signal (*f)(param, signal) = parent.f;
 	signal (*g)(param, signal) = parent.g;
 
-	const weight_matrix &W = parent.W;
+	const weight_matrix &W = parent.top_down_W;
 
 	signal_vector y = parent.F2.output();
 
-	std::cout << "   calculations" << std::endl;
 	signal_vector gated = vectorApply(y, g, theta);
-	std::cout << "      transforming" << std::endl;
-	try {
-		signal_vector transformed = W * gated;
-	} catch (dimension_error &e) {
-		std::cout << e.what() << std::endl;
-		std::cout << W.row_dim() << " != " << gated.dim() << std::endl;
-	}
-	std::cout << "      adding" << std::endl;
-	signal_vector temp_p(u + gated.project(u.dim()));
-	std::cout << "   q" << std::endl;
+	signal_vector transformed = gated * W;
+	signal_vector temp_p(u + transformed.project(u.dim()));
 	signal_vector temp_q(p * (e + p.norm()));
 	signal_vector temp_u(v * (e + v.norm()));
 	signal_vector temp_v(vectorApply(x, f, theta) + b * vectorApply(q, f, theta));
 	signal_vector temp_w(I + a * u);
 	signal_vector temp_x(w * (e + w.norm()));
-
-	std::cout << "   saving work" << std::endl;
 
 	p = temp_p;
 	q = temp_q;
@@ -115,7 +133,17 @@ ART2Network::Layer2::Layer2(const ART2Network &parent):
 	Maxnet(), parent(parent) {
 }
 
-void ART2Network::Layer2::reset() {
+art2nn::index ART2Network::Layer2::winner() const {
+	for (index J = 0; J < node_count; ++J)
+		return J;
+	return 0;
+}
+
+art2nn::signal ART2Network::Layer2::winnerSignal() const {
+	return signals[winner()];
+}
+
+void ART2Network::Layer2::resetWeights() {
 	param epsilon = 1.0 / node_count;
 	param theta = 1.0;
 
@@ -134,6 +162,10 @@ void ART2Network::Layer2::suppress(index j) {
 		W(i, j, 0.0);
 }
 
+void ART2Network::Layer2::suppressWinner() {
+	suppress(winner());
+}
+
 unsigned int ART2Network::Layer2::unsuppressedNodeCount() {
 	unsigned int count = 0;
 	for (index i = 0; i < node_count; ++i) {
@@ -149,7 +181,7 @@ void ART2Network::Layer2::addNode() {
 
 	weight_matrix newW(node_count, node_count);
 	W = newW;
-	reset();
+	resetWeights();
 }
 
 
@@ -169,5 +201,5 @@ bool ART2Network::Vigil::operator()() {
 
 	r = (u + c*p) / (e + u.norm() + c * p.norm());
 
-	return rho / (e + r.norm()) > 1;
+	return rho / (e + r.norm()) < 1;
 }

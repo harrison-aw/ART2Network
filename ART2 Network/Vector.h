@@ -241,12 +241,15 @@ T Vector<T>::norm() const {
 
 template<class T>
 Vector<T> Vector<T>::project(dimension m) const {
-	Vector projection(m);
-	dimension min = (n > m) ? m : n;
+	if (m != n) {
+		Vector projection(m);
+		dimension min = (n > m) ? m : n;
 
-	for (index i = 0; i < min; ++i)
-		projection.coords[i] = coords[i];
-	return projection;
+		for (index i = 0; i < min; ++i)
+			projection.coords[i] = coords[i];
+		return projection;
+	}
+	return *this;
 }
 
 } /* namespace art2nn */

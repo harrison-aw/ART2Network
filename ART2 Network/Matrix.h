@@ -40,6 +40,7 @@ public:
 	friend Vector<T> operator*<>(const Matrix<T>&, const Vector<T>&);
 	friend Vector<T> operator*<>(const Vector<T>&, const Matrix<T>&);
 	friend Matrix<T> operator*<>(const Matrix<T>&, const Matrix<T>&);
+
 	friend bool operator==<>(const Matrix<T> &left, const Matrix<T> &right);
 	friend bool operator!=<>(const Matrix<T> &left, const Matrix<T> &right);
 
@@ -52,6 +53,7 @@ public:
 	T operator()(index i, index j, T entry);
 
 	Matrix<T> transpose() const;
+	void resize(dimension new_n, dimension new_m);
 
 	Vector<T> row(index i) const { return Vector<T>(m, entries[i]); }
 	Vector<T> column(index j) const { return Vector<T>(n, transposed_entries[j]); }
@@ -284,6 +286,45 @@ Matrix<T> Matrix<T>::transpose() const {
 	transpose.transposed_entries = transpose.entries;
 	transpose.entries = temp;
 	return transpose;
+}
+
+template<class T>
+void Matrix<T>::resize(dimension new_n, dimension new_m) {
+	if (new_n != n || new_m != m) {
+		T **new_entries, **new_transposed_entries;
+
+		index min_n = (n < new_n) ? n : new_n;
+		index min_m = (m < new_m) ? m : new_m;
+
+		new_entries = new T*[new_n];
+		for (index i = 0; i < new_n; ++i) {
+			new_entries[i] = new T[new_m];
+			for (index j = 0; j < min_m; ++j) {
+				if (i < n)
+					new_entries[i][j] = entries[i][j];
+			}
+			if (i < n)
+				delete entries[i];
+		}
+		delete entries;
+		entries = new_entries;
+
+		new_transposed_entries = new T*[new_m];
+		for (index j = 0; j < new_m; ++j) {
+			new_transposed_entries[j] = new T[new_m];
+			for (index i = 0; i < min_n; ++i) {
+				if (j < m)
+					new_transposed_entries[j][i] = transposed_entries[j][i];
+			}
+			if (j < m)
+				delete transposed_entries[j];
+		}
+		delete transposed_entries;
+		transposed_entries = new_transposed_entries;
+
+		n = new_n;
+		m = new_m;
+	}
 }
 
 } /* namespace art2nn */
