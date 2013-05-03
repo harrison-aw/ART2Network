@@ -12,3 +12,4 @@ ART2 Network/Debug/makefile
 *.d
 
 *.o
+/Debug

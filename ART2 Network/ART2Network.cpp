@@ -8,26 +8,39 @@
 #include "ART2Network.h"
 #include "nnfunctions.h"
 
+#include <iostream>
+
 using namespace art2nn;
 
 ART2Network::ART2Network(dimension input_dimension, param a, param b, param c, param d, param e, param theta, param rho):
 	input_dimension(input_dimension),
 	a(a), b(b), c(c), d(d), e(e), theta(theta), rho(rho),
 	f(LINEAR_SIGNAL_FUNCTION), g(HEAVISIDE_SIGNAL_FUNCTION),
-	F1(*this), F2(*this) {
-
-
+	W(input_dimension, 0),
+	F1(*this), F2(*this), vigilance(*this) {
+	std::cout << "built network" << std::endl;
 }
 
 ART2Network::~ART2Network() {
 }
 
 art2nn::index ART2Network::operator()(const input_vector &I) {
-	signal_vector out = F2(F1(I));
+	std::cout << "   first pass" << std::endl;
+	signal_vector filtered = F1(I);
+	std::cout << "   compete" << std::endl;
+	signal_vector out = F2(filtered);
+	std::cout << "   feed back" << std::endl;
+	F1(I);
 
-	for (index i = 0; i < out.dim(); ++i) {
-		if (out[i] > 0)
-			return i;
+	index J = 0;
+	for (; J < out.dim(); ++J) {
+		if (out[J] > 0.0)
+			break;
+	}
+
+	std::cout << "   vigilance test" << std::endl;
+	if (vigilance()) {
+		return 1;
 	}
 
 	return 0;
@@ -59,12 +72,25 @@ signal_vector ART2Network::Layer1::operator()(input_vector I) {
 
 	signal_vector y = parent.F2.output();
 
-	signal_vector temp_p(u + W * vectorApply(y, g, theta));
+	std::cout << "   calculations" << std::endl;
+	signal_vector gated = vectorApply(y, g, theta);
+	std::cout << "      transforming" << std::endl;
+	try {
+		signal_vector transformed = W * gated;
+	} catch (dimension_error &e) {
+		std::cout << e.what() << std::endl;
+		std::cout << W.row_dim() << " != " << gated.dim() << std::endl;
+	}
+	std::cout << "      adding" << std::endl;
+	signal_vector temp_p(u + gated.project(u.dim()));
+	std::cout << "   q" << std::endl;
 	signal_vector temp_q(p * (e + p.norm()));
 	signal_vector temp_u(v * (e + v.norm()));
 	signal_vector temp_v(vectorApply(x, f, theta) + b * vectorApply(q, f, theta));
 	signal_vector temp_w(I + a * u);
 	signal_vector temp_x(w * (e + w.norm()));
+
+	std::cout << "   saving work" << std::endl;
 
 	p = temp_p;
 	q = temp_q;
@@ -129,7 +155,7 @@ void ART2Network::Layer2::addNode() {
 
 /* Vigil */
 
-ART2Network::Vigil::Vigil(const ART2Network& parent):
+ART2Network::Vigil::Vigil(const ART2Network &parent):
 	parent(parent), r(parent.input_dimension) {
 }
 

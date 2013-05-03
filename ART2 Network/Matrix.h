@@ -182,7 +182,7 @@ bool operator==(const Matrix<T> &left, const Matrix<T> &right) {
 	if (left.n != right.n || left.m != right.m)
 		return false;
 	for (index i = 0; i < left.n; ++i) {
-		for (index j = 0; j < left.m; ++i) {
+		for (index j = 0; j < left.m; ++j) {
 			if (left.entries[i][j] != right.entries[i][j])
 				return false;
 		}

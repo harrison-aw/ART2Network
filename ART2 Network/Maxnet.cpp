@@ -25,12 +25,12 @@ Maxnet::Maxnet(size_t node_count):
 }
 
 Maxnet::Maxnet(size_t node_count, param epsilon, param theta):
-	node_count(node_count),  f(SIMPLE_SIGNAL_FUNCTION) {
+	node_count(node_count), f(SIMPLE_SIGNAL_FUNCTION), signals(node_count), W(node_count, node_count) {
 	initW(epsilon, theta);
 }
 
 Maxnet::Maxnet(size_t node_count, param epsilon, param theta, signal (*f)(signal)):
-	node_count(node_count), f(f) {
+	node_count(node_count), f(f), signals(node_count), W(node_count, node_count) {
 	initW(epsilon, theta);
 }
 

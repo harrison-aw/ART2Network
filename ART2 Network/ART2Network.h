@@ -36,6 +36,7 @@ public:
 
 		signal_vector operator()(const input_vector I);
 
+		friend class Layer2;
 		friend class Vigil;
 	private:
 		void initVectors();
@@ -97,6 +98,7 @@ private:
 
 	Layer1 F1;
 	Layer2 F2;
+	Vigil vigilance;
 }; /* class ART2Network */
 
 } /* namespace art2nn */
