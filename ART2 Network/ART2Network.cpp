@@ -8,7 +8,6 @@
 #include "ART2Network.h"
 #include "nnfunctions.h"
 
-#include <iostream>
 #include <cmath>
 
 using namespace art2nn;
@@ -27,10 +26,7 @@ ART2Network::~ART2Network() {
 art2nn::index ART2Network::operator()(const input_vector &I) {
 	bool stable = false;
 	do {
-		std::cout << "made it here" << std::endl;
-		signal_vector filter = F1(I);
-		std::cout << "here now" << std::endl;
-		F2(filter);  // feed forward
+		F2(F1(I));  // feed forward
 		F1(I);      // feed back
 		if (vigilance()) {  // if vigilance test is passed
 			stable = true;
